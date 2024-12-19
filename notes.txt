@@ -1,0 +1,60 @@
+Download requirements: pip install gym numpy matplotlib pillow
+
+An OpenAI Gym environment must implement the following methods:
+__init__(): Initialize the environment
+reset(): Reset the environment to an initial state
+step(action): Apply an action to the environment
+render(): Visualize the environment (optional)
+close(): Clean up resources (optional)
+
+Variables like self.num_tiles and self.goal_state and Functions like is_solvable() are not provided in gym.Env, you defien them
+By inheriting from gym.Env, you ensure that your environment adheres to a standard interface expected by reinforcement learning agents.
+- gym.Env declares methods like reset() and step(action) as abstract methods that you must implement, but I need to write my own code for it depending on my project
+- it tells what all to have, but under them i write my own code and define my own varibales 
+
+
+- After each env.step(action), the done variable may change depending on whether the puzzle is solved.
+- Each state is stored as a list.
+    - [1, 2, 3, 0], where 0 represents the empty tile
+
+- Each tile in self.state is compared to the corresponding tile in self.goal_state in the calculate_reward funtion.
+- Each tile is assigned a number from 1 to n^2 (4)
+- When you specify a direction (up, down, left, right), you're moving the empty tile in that direction if possible.
+- For example, if the empty tile is at the top row, it cannot move up. Then -> invalid move so -5
+
+- The loop is while not done:, which means the loop will continue as long as done is False, it will stop when while not done (i.e. while True)
+
+How are the goal state and initial state being figured out?
+    self.goal_state = np.arange(1, self.num_tiles).tolist() + [self.empty_tile]
+        - For a 2x2 puzzle (grid_size = 2), self.num_tiles = 4.
+        - self.num_tiles = self.grid_size * self.grid_size
+        - np.arange(1, self.num_tiles) generates [1, 2, 3].
+        - self.empty_tile is 0.
+        - self.goal_state becomes [1, 2, 3, 0].  
+    Initial state:
+        - state = self.goal_state.copy()
+        - np.random.shuffle(state) - dont say this - "until we get a state that is solvable" 
+
+How is_solvable? Don't talk about it yet!
+
+Step function:
+Render:
+
+
+
+Variables I Define:
+self.grid_size: Size of the puzzle grid.
+self.num_tiles: Total number of tiles (including the empty space).
+self.empty_tile: Representation of the empty space.
+self.goal_state: The target state the puzzle needs to reach.
+self.state: The current state of the puzzle.
+Methods I Implement:
+_create_solvable_puzzle(): Generates a random, solvable puzzle state.
+_is_solvable(state): Determines if a given state is solvable.
+_calculate_reward(): Calculates the reward based on the current state
+
+Reference Links:
+
+
+Notes:
+invalid move : -100
