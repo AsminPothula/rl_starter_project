@@ -58,3 +58,11 @@ Reference Links:
 
 Notes:
 invalid move : -100
+
+
+
+what are the diff states my env can be in? actions are 4 but what are the various state? => q table is being defiend acc to this (currenlty 4*4)
+q values are negavtibe
+q values are same in columns for all rows 
+puzzle is not being solved, taking infinite time
+write down all possible start states my puzzle can be in
