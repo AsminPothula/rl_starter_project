@@ -3,6 +3,8 @@ import itertools
 from sliding_puzzle_env import SlidingPuzzleEnv
 from tqdm import tqdm
 from tabulate import tabulate
+from plot_training_results import plot_training_results
+
 
 def main():
     puzzle_size = 2
@@ -15,7 +17,12 @@ def main():
     learning_rate = 0.8 
     exploration_prob = 0.2 
     discount_factor = 0.95 
-    epochs = 1000
+    epochs = 100
+
+    # ✅ Initialize lists to store training stats
+    epochs_list = []
+    steps_list = []
+    rewards_list = []
 
     with tqdm(total=epochs, desc="Training Progress", bar_format="{l_bar}{bar} [ {n_fmt}/{total_fmt} epochs ]") as pbar:
         for epoch in range(epochs):
@@ -34,7 +41,7 @@ def main():
             print("-" * 30)
 
             while not done:
-                state_index = state_to_index[tuple(state)] #the dictionary is made and the states and indices are mapped, and the indices are stored in state_index
+                state_index = state_to_index[tuple(state)] 
 
                 if np.random.rand() < exploration_prob:
                     action = np.random.randint(0, env.action_space.n)  # Explore
@@ -70,13 +77,20 @@ def main():
             print("\nEpoch Summary:")
             print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="grid"))
             print("-" * 80)
+
+            # ✅ Store statistics per epoch
+            epochs_list.append(epoch + 1)
+            steps_list.append(steps)
+            rewards_list.append(total_reward)
+
             pbar.update(1)
 
     print("Learned Q-table:")
     print(Q_table)
+    plot_training_results(epochs_list, steps_list, rewards_list)
+   
+   #testing
     print("Training completed, testing the agent:")
-
-    #training
     state = env.reset() 
     done = False
     while not done:
@@ -92,4 +106,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-#remove all comments 
+
