@@ -1,10 +1,12 @@
 import numpy as np
 import itertools
 from sliding_puzzle_env import SlidingPuzzleEnv
+from tqdm import tqdm
+from tabulate import tabulate
 
 def main():
     # Initialize the environment
-    puzzle_size = 3
+    puzzle_size = 2
     env = SlidingPuzzleEnv(grid_size=puzzle_size)
 
     # Generate all possible states (permutations of the tiles) 
@@ -24,35 +26,73 @@ def main():
     epochs = 1000
 
     # Q-learning algorithm
-    for epoch in range(epochs):
-        state = env.reset()  # Reset the environment to a random state
-        done = False
+    with tqdm(total=epochs, desc="Training Progress", bar_format="{l_bar}{bar} [ {n_fmt}/{total_fmt} epochs ]") as pbar:
+        for epoch in range(epochs):
+            state = env.reset()  # Reset the environment to a random state
+            done = False
 
-        while not done:
-            # Get the index of the current state 
-            # the state list is converted to a tuple, and its corresponding index is searched for (in s_to_in) and stored (in s_i)
-            state_index = state_to_index[tuple(state)] #the dictionary is made and the states and indices are mapped, and the indices are stored in state_index
+            # Tracking statistics
+            steps = 0
+            total_reward = 0
+            actions_taken = []
+            exploration_count = 0
+            exploitation_count = 0
+            step_details = []  # Store step-wise action and reward
 
-            # Choose action with epsilon-greedy strategy
-            if np.random.rand() < exploration_prob:
-                action = np.random.randint(0, env.action_space.n)  # Explore
-            else:
-                action = np.argmax(Q_table[state_index])  # Exploit 
+            print(f"\nEpoch {epoch + 1}/{epochs} Running...\n")
+            print(f"{'Step':<6}{'Action':<10}{'Reward':<10}")
+            print("-" * 30)
 
-            # Take the action in the environment
-            next_state, reward, done, _ = env.step(action)
-            next_state_index = state_to_index[tuple(next_state)]  # Get the index of the next state
+            while not done:
+                # Get the index of the current state 
+                # the state list is converted to a tuple, and its corresponding index is searched for (in s_to_in) and stored (in s_i)
+                state_index = state_to_index[tuple(state)] #the dictionary is made and the states and indices are mapped, and the indices are stored in state_index
 
-            # Update Q-value using the Q-learning formula 
-            # learning rate * difference between the new expected reward and the current Q-value
-            Q_table[state_index, action] += learning_rate * (
-                reward + discount_factor * np.max(Q_table[next_state_index]) - Q_table[state_index, action]
-            )
+                # Choose action with epsilon-greedy strategy
+                if np.random.rand() < exploration_prob:
+                    action = np.random.randint(0, env.action_space.n)  # Explore
+                    exploration_count += 1
+                else:
+                    action = np.argmax(Q_table[state_index])  # Exploit 
+                    exploitation_count += 1
 
-            # Move to the next state
-            state = next_state
+                # Take the action in the environment
+                next_state, reward, done, _ = env.step(action)
+                next_state_index = state_to_index[tuple(next_state)]  # Get the index of the next state
 
-        print(f"Epoch {epoch + 1}/{epochs} completed.")
+                # Update Q-value using the Q-learning formula 
+                # learning rate * difference between the new expected reward and the current Q-value
+                Q_table[state_index, action] += learning_rate * (
+                    reward + discount_factor * np.max(Q_table[next_state_index]) - Q_table[state_index, action]
+                )
+
+                # Track step details
+                steps += 1
+                total_reward += reward
+                action_name = ['Up', 'Down', 'Left', 'Right'][action]
+                actions_taken.append(action_name)
+                step_details.append([steps, action_name, f"{reward:.2f}"])
+                # Print step details immediately
+                print(f"{steps:<6}{action_name:<10}{reward:<10.2f}")
+
+                # Move to next state
+                state = next_state
+
+            #print(f"Epoch {epoch + 1}/{epochs} completed.")
+            # Print summary table after epoch completion
+            table_data = [
+                ["Total Steps", steps],
+                ["Total Reward", f"{total_reward:.2f}"],
+                ["Actions Taken", ", ".join(actions_taken)],
+                ["Exploration Count", exploration_count],
+                ["Exploitation Count", exploitation_count]
+            ]
+
+            print("\nEpoch Summary:")
+            print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="grid"))
+            print("-" * 80)
+            pbar.update(1)
+
     print("Learned Q-table:")
     print(Q_table)
     # q table is set up now

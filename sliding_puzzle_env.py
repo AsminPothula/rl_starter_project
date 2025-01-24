@@ -5,7 +5,7 @@ import numpy as np
 class SlidingPuzzleEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, grid_size=3):
+    def __init__(self, grid_size=2):
         super(SlidingPuzzleEnv, self).__init__()
 
         self.grid_size = grid_size
