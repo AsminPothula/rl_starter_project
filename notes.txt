@@ -66,3 +66,22 @@ q values are negavtibe
 q values are same in columns for all rows 
 puzzle is not being solved, taking infinite time
 write down all possible start states my puzzle can be in
+
+
+-----------------------------------------------------------------------------
+x - number of epochs 
+y - number of steps/actions and reward we are getting per epoch 
+create a graph 
+after each epcoh, print out staticstics - rewards # of steps, etc 
+do for 100e peochs 
+
+dosplay the bar for how far it is going per epoch - ette way 
+
+coda, pytorch - deep elarning, ml, gpu (frameowrk to use gpu )
+
+1. ppt 
+2. pixels - rendering 
+3. put orch tutorial 
+4. graphs with statistics fter every epoch 
+5. join lab - reply email and join slack
+- put togteherr all the sources youre finding 
