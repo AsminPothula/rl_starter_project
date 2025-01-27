@@ -1,126 +1,101 @@
 import numpy as np
 import itertools
 import os
-import cv2
+import matplotlib.pyplot as plt
 from sliding_puzzle_env import SlidingPuzzleEnv
 from tqdm import tqdm
+from tabulate import tabulate
 
-# ✅ Automatically detect Desktop path for saving training results
-DESKTOP_DIR = os.path.join(os.path.expanduser("~"), "Desktop", "rl_output")
-OUTPUT_DIR = os.path.abspath(DESKTOP_DIR)  # Save files to Desktop
-
-# ✅ Ensure the output directory exists
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# ✅ Image file path (should be in the same directory as `main.py`)
-IMAGE_FILE = "puzzle.png"
-
-# ✅ Function to split image into 4 tiles and assign one tile as empty
-def split_and_save_image(image_path, output_dir):
-    """Splits the image into 4 tiles and assigns one as the empty tile."""
-    image = cv2.imread(image_path)
-    image = cv2.resize(image, (200, 200))  # Resize to 200x200
-
-    os.makedirs(output_dir, exist_ok=True)
-
-    tiles = []
-    for i in range(2):
-        for j in range(2):
-            tile = image[i * 100:(i + 1) * 100, j * 100:(j + 1) * 100]
-            tiles.append(tile)
-
-    # ✅ Randomly select one tile as the empty tile (represented by index 0)
-    empty_tile_index = np.random.choice(4)
-
-    for i in range(4):
-        tile_filename = os.path.join(output_dir, f"tile_{i}.png")
-        if i == empty_tile_index:
-            cv2.imwrite(tile_filename, np.ones((100, 100, 3), dtype=np.uint8) * 255)  # White empty tile
-        else:
-            cv2.imwrite(tile_filename, tiles[i])
-
-    print(f"✅ Image split into 4 tiles. Empty tile is at index: {empty_tile_index}")
-
-# ✅ Detect the empty tile from saved images
-def get_correct_goal_state(output_dir):
-    """Determines the correct goal state based on the actual empty tile."""
-    empty_tile_index = None
-    for i in range(4):
-        tile_path = os.path.join(output_dir, f"tile_{i}.png")
-        tile_image = cv2.imread(tile_path, cv2.IMREAD_GRAYSCALE)  # Read in grayscale
-        if tile_image is not None and np.all(tile_image == 255):  # White tile is the empty tile
-            empty_tile_index = i
-            break
-
-    if empty_tile_index is None:
-        raise ValueError("❌ Could not determine the empty tile index.")
-
-    # ✅ Always set goal state to [1, 2, 3, 0] but adjust empty tile dynamically
-    goal_state = [1, 2, 3, 0]  # ✅ Correct goal state for sliding puzzle
-
-    print(f"✅ Correct Goal State: {goal_state}")  # Debugging
-    return goal_state
-
+def save_puzzle_state(env, state, filename):
+    """ Saves a visualization of the puzzle state as an image. """
+    grid_size = env.grid_size
+    fig, ax = plt.subplots(grid_size, grid_size, figsize=(4, 4))
+    for i in range(grid_size):
+        for j in range(grid_size):
+            idx = i * grid_size + j
+            if state[idx] != env.empty_tile:
+                ax[i, j].imshow(env.tiles[state[idx]])
+            ax[i, j].axis("off")
+    plt.savefig(filename, bbox_inches='tight', pad_inches=0.1)
+    plt.close()
+    print(f"Saved puzzle state to {filename}")
 
 def main():
-    """Main function to train Q-learning on sliding puzzle."""
-    print("📌 Current Directory:", os.getcwd())
+    # Load tile images
+    tile_folder = "puzzle_tiles"
+    tile_paths = [os.path.join(tile_folder, f"tile_{i}.png") for i in range(4)]
 
-    # ✅ Ensure image exists and process into tiles
-    if not os.path.exists(IMAGE_FILE):
-        print(f"❌ ERROR: Upload an image as '{IMAGE_FILE}' in the current directory before running.")
-        return
+    # Ensure tiles exist
+    for path in tile_paths:
+        if not os.path.exists(path):
+            print(f"ERROR: Tile {path} not found!")
+            return
 
-    # ✅ Split and save tiles
-    split_and_save_image(IMAGE_FILE, OUTPUT_DIR)
-
-    # ✅ Get dynamically determined goal state
-    goal_state = get_correct_goal_state(OUTPUT_DIR)
-
-    # ✅ Initialize Q-learning environment
+    # Initialize the environment with image tiles
     puzzle_size = 2
-    env = SlidingPuzzleEnv(grid_size=puzzle_size, image_dir=OUTPUT_DIR, goal_state=goal_state)
+    env = SlidingPuzzleEnv(grid_size=puzzle_size, tile_paths=tile_paths)
 
-    all_states = list(itertools.permutations(range(puzzle_size**2)))
+    # Generate all possible states
+    all_states = list(itertools.permutations(np.arange(puzzle_size**2)))
     state_to_index = {state: index for index, state in enumerate(all_states)}
 
-    Q_table = np.zeros((len(all_states), env.action_space.n))  
+    # Initialize Q-table
+    Q_table = np.zeros((len(all_states), env.action_space.n))
 
-    # ✅ Hyperparameters
+    # Define parameters
     learning_rate = 0.8
     exploration_prob = 0.2
     discount_factor = 0.95
-    epochs = 10
-    max_moves = 50  # ✅ Limit moves per episode to prevent infinite loops
+    epochs = 1000
 
-    # ✅ Training loop
+    # Training
     with tqdm(total=epochs, desc="Training Progress") as pbar:
         for epoch in range(epochs):
-            state = env.reset()  # Start with a new random state
+            print(f"\nEpoch {epoch + 1}/{epochs} running...")
+            state = env.reset()
             done = False
-            moves = 0  # ✅ Track move count
 
-            while not done and moves < max_moves:
+            while not done:
                 state_index = state_to_index[tuple(state)]
-                
-                # Explore vs Exploit
-                action = np.random.randint(0, env.action_space.n) if np.random.rand() < exploration_prob else np.argmax(Q_table[state_index])  
+
+                if np.random.rand() < exploration_prob:
+                    action = np.random.randint(0, env.action_space.n)
+                else:
+                    action = np.argmax(Q_table[state_index])
 
                 next_state, reward, done, _ = env.step(action)
                 next_state_index = state_to_index[tuple(next_state)]
 
-                # ✅ Update Q-table
                 Q_table[state_index, action] += learning_rate * (
                     reward + discount_factor * np.max(Q_table[next_state_index]) - Q_table[state_index, action]
                 )
 
                 state = next_state
-                moves += 1  # ✅ Increment move count
 
             pbar.update(1)
 
-    print("\n✅ Training Complete! Learned Q-table:")
-    print(Q_table)
+    print("\nTraining completed. Testing the agent:")
+
+    # Start Testing
+    state = env.reset()
+    done = False
+
+    # Save the start state image
+    save_puzzle_state(env, state, "start_state.png")
+
+    while not done:
+        env.render()
+        state_index = state_to_index[tuple(state)]
+        action = np.argmax(Q_table[state_index])
+        state, reward, done, _ = env.step(action)
+        print(f"Action: {['Up', 'Down', 'Left', 'Right'][action]} | Reward: {reward}")
+
+    print("\nPuzzle solved!")
+
+    # Save the solved state image
+    save_puzzle_state(env, state, "solved_state.png")
+
+    env.render()
 
 if __name__ == "__main__":
     main()
