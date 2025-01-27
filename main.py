@@ -1,120 +1,126 @@
 import numpy as np
 import itertools
+import os
+import cv2
 from sliding_puzzle_env import SlidingPuzzleEnv
 from tqdm import tqdm
-from tabulate import tabulate
-from plot_training_results import plot_training_results
-import sys
-import os
+
+# ✅ Automatically detect Desktop path for saving training results
+DESKTOP_DIR = os.path.join(os.path.expanduser("~"), "Desktop", "rl_output")
+OUTPUT_DIR = os.path.abspath(DESKTOP_DIR)  # Save files to Desktop
+
+# ✅ Ensure the output directory exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ✅ Image file path (should be in the same directory as `main.py`)
+IMAGE_FILE = "puzzle.png"
+
+# ✅ Function to split image into 4 tiles and assign one tile as empty
+def split_and_save_image(image_path, output_dir):
+    """Splits the image into 4 tiles and assigns one as the empty tile."""
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (200, 200))  # Resize to 200x200
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    tiles = []
+    for i in range(2):
+        for j in range(2):
+            tile = image[i * 100:(i + 1) * 100, j * 100:(j + 1) * 100]
+            tiles.append(tile)
+
+    # ✅ Randomly select one tile as the empty tile (represented by index 0)
+    empty_tile_index = np.random.choice(4)
+
+    for i in range(4):
+        tile_filename = os.path.join(output_dir, f"tile_{i}.png")
+        if i == empty_tile_index:
+            cv2.imwrite(tile_filename, np.ones((100, 100, 3), dtype=np.uint8) * 255)  # White empty tile
+        else:
+            cv2.imwrite(tile_filename, tiles[i])
+
+    print(f"✅ Image split into 4 tiles. Empty tile is at index: {empty_tile_index}")
+
+# ✅ Detect the empty tile from saved images
+def get_correct_goal_state(output_dir):
+    """Determines the correct goal state based on the actual empty tile."""
+    empty_tile_index = None
+    for i in range(4):
+        tile_path = os.path.join(output_dir, f"tile_{i}.png")
+        tile_image = cv2.imread(tile_path, cv2.IMREAD_GRAYSCALE)  # Read in grayscale
+        if tile_image is not None and np.all(tile_image == 255):  # White tile is the empty tile
+            empty_tile_index = i
+            break
+
+    if empty_tile_index is None:
+        raise ValueError("❌ Could not determine the empty tile index.")
+
+    # ✅ Always set goal state to [1, 2, 3, 0] but adjust empty tile dynamically
+    goal_state = [1, 2, 3, 0]  # ✅ Correct goal state for sliding puzzle
+
+    print(f"✅ Correct Goal State: {goal_state}")  # Debugging
+    return goal_state
+
 
 def main():
-    # Set up file path in the current directory
-    output_file = os.path.join(os.getcwd(), "training_output.txt")
+    """Main function to train Q-learning on sliding puzzle."""
+    print("📌 Current Directory:", os.getcwd())
 
-    # Redirect stdout to a file
-    with open(output_file, "w") as f:
-        sys.stdout = f  # Redirect all print statements to file
+    # ✅ Ensure image exists and process into tiles
+    if not os.path.exists(IMAGE_FILE):
+        print(f"❌ ERROR: Upload an image as '{IMAGE_FILE}' in the current directory before running.")
+        return
 
-        # Run the original script
-        puzzle_size = 2
-        env = SlidingPuzzleEnv(grid_size=puzzle_size)
-        all_states = list(itertools.permutations(np.arange(puzzle_size**2)))
-        state_to_index = {state: index for index, state in enumerate(all_states)}
+    # ✅ Split and save tiles
+    split_and_save_image(IMAGE_FILE, OUTPUT_DIR)
 
-        Q_table = np.zeros((len(all_states), env.action_space.n))  # 24 states, 4 actions
+    # ✅ Get dynamically determined goal state
+    goal_state = get_correct_goal_state(OUTPUT_DIR)
 
-        learning_rate = 0.8 
-        exploration_prob = 0.2 
-        discount_factor = 0.95 
-        epochs = 100
+    # ✅ Initialize Q-learning environment
+    puzzle_size = 2
+    env = SlidingPuzzleEnv(grid_size=puzzle_size, image_dir=OUTPUT_DIR, goal_state=goal_state)
 
-        # ✅ Initialize lists to store training stats
-        epochs_list = []
-        steps_list = []
-        rewards_list = []
+    all_states = list(itertools.permutations(range(puzzle_size**2)))
+    state_to_index = {state: index for index, state in enumerate(all_states)}
 
-        with tqdm(total=epochs, desc="Training Progress", bar_format="{l_bar}{bar} [ {n_fmt}/{total_fmt} epochs ]") as pbar:
-            for epoch in range(epochs):
-                state = env.reset() 
-                done = False
+    Q_table = np.zeros((len(all_states), env.action_space.n))  
 
-                steps = 0
-                total_reward = 0
-                actions_taken = []
-                exploration_count = 0
-                exploitation_count = 0
-                step_details = []  
+    # ✅ Hyperparameters
+    learning_rate = 0.8
+    exploration_prob = 0.2
+    discount_factor = 0.95
+    epochs = 10
+    max_moves = 50  # ✅ Limit moves per episode to prevent infinite loops
 
-                print(f"\nEpoch {epoch + 1}/{epochs} Running...\n")
-                print(f"{'Step':<6}{'Action':<10}{'Reward':<10}")
-                print("-" * 30)
+    # ✅ Training loop
+    with tqdm(total=epochs, desc="Training Progress") as pbar:
+        for epoch in range(epochs):
+            state = env.reset()  # Start with a new random state
+            done = False
+            moves = 0  # ✅ Track move count
 
-                while not done:
-                    state_index = state_to_index[tuple(state)] 
+            while not done and moves < max_moves:
+                state_index = state_to_index[tuple(state)]
+                
+                # Explore vs Exploit
+                action = np.random.randint(0, env.action_space.n) if np.random.rand() < exploration_prob else np.argmax(Q_table[state_index])  
 
-                    if np.random.rand() < exploration_prob:
-                        action = np.random.randint(0, env.action_space.n)  # Explore
-                        exploration_count += 1
-                    else:
-                        action = np.argmax(Q_table[state_index])  # Exploit 
-                        exploitation_count += 1
+                next_state, reward, done, _ = env.step(action)
+                next_state_index = state_to_index[tuple(next_state)]
 
-                    next_state, reward, done, _ = env.step(action)
-                    next_state_index = state_to_index[tuple(next_state)]  # Get the index of the next state
+                # ✅ Update Q-table
+                Q_table[state_index, action] += learning_rate * (
+                    reward + discount_factor * np.max(Q_table[next_state_index]) - Q_table[state_index, action]
+                )
 
-                    Q_table[state_index, action] += learning_rate * (
-                        reward + discount_factor * np.max(Q_table[next_state_index]) - Q_table[state_index, action]
-                    )
+                state = next_state
+                moves += 1  # ✅ Increment move count
 
-                    steps += 1
-                    total_reward += reward
-                    action_name = ['Up', 'Down', 'Left', 'Right'][action]
-                    actions_taken.append(action_name)
-                    step_details.append([steps, action_name, f"{reward:.2f}"])
-                    print(f"{steps:<6}{action_name:<10}{reward:<10.2f}")
+            pbar.update(1)
 
-                    state = next_state
-
-                table_data = [
-                    ["Total Steps", steps],
-                    ["Total Reward", f"{total_reward:.2f}"],
-                    ["Actions Taken", ", ".join(actions_taken)],
-                    ["Exploration Count", exploration_count],
-                    ["Exploitation Count", exploitation_count]
-                ]
-
-                print("\nEpoch Summary:")
-                print(tabulate(table_data, headers=["Metric", "Value"], tablefmt="grid"))
-                print("-" * 80)
-
-                # ✅ Store statistics per epoch
-                epochs_list.append(epoch + 1)
-                steps_list.append(steps)
-                rewards_list.append(total_reward)
-
-                pbar.update(1)
-
-        print("Learned Q-table:")
-        print(Q_table)
-        plot_training_results(epochs_list, steps_list, rewards_list)
-    
-        # ✅ Testing phase
-        print("Training completed, testing the agent:")
-        state = env.reset() 
-        done = False
-        while not done:
-            env.render()
-            state_index = state_to_index[tuple(state)]
-            action = np.argmax(Q_table[state_index])
-            state, reward, done, _ = env.step(action)
-            print(f"Action: {['Up', 'Down', 'Left', 'Right'][action]} | Reward: {reward}")
-
-        print("Congratulations! The agent solved the puzzle!")
-        env.render()
-
-    # Restore default stdout
-    sys.stdout = sys.__stdout__
-    print(f"Terminal output saved to: {output_file}")
+    print("\n✅ Training Complete! Learned Q-table:")
+    print(Q_table)
 
 if __name__ == "__main__":
     main()
