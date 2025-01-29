@@ -70,7 +70,7 @@ class SlidingPuzzleEnv(gym.Env):
                 idx = i * self.grid_size + j
                 if self.state[idx] != self.empty_tile:
                     ax[i, j].imshow(self.tiles[self.state[idx]])
-                ax[i, j].axis("off")
+                ax[i, j].axis("on")
 
         if save_path:
             plt.savefig(save_path, bbox_inches='tight', pad_inches=0.1)

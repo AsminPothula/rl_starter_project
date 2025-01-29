@@ -20,7 +20,6 @@ def split_image(image_path, grid_size=2):
 
     return tiles
 
-# Make sure 'puzzle_image.jpg' is available in your Codespaces
 image_path = "puzzle.png"
 
 # Split image
