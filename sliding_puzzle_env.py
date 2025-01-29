@@ -62,8 +62,8 @@ class SlidingPuzzleEnv(gym.Env):
 
         return np.array(self.state), reward, done, {}
 
-    def render(self, mode='human'):
-        """Displays the puzzle using image tiles instead of numbers."""
+    def render(self, mode='human', save_path=None):
+        """Displays the puzzle using image tiles instead of numbers, with an option to save."""
         fig, ax = plt.subplots(self.grid_size, self.grid_size, figsize=(4, 4))
         for i in range(self.grid_size):
             for j in range(self.grid_size):
@@ -71,7 +71,14 @@ class SlidingPuzzleEnv(gym.Env):
                 if self.state[idx] != self.empty_tile:
                     ax[i, j].imshow(self.tiles[self.state[idx]])
                 ax[i, j].axis("off")
-        plt.show()
+
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight', pad_inches=0.1)
+            print(f"Saved puzzle state to {save_path}")
+        else:
+            plt.show()
+        plt.close()
+
 
     def _create_solvable_puzzle(self):
         state = self.goal_state.copy()

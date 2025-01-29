@@ -6,7 +6,7 @@ from sliding_puzzle_env import SlidingPuzzleEnv
 from tqdm import tqdm
 from tabulate import tabulate
 
-def save_puzzle_state(env, state, filename):
+"""def save_puzzle_state(env, state, filename):
     """ Saves a visualization of the puzzle state as an image. """
     grid_size = env.grid_size
     fig, ax = plt.subplots(grid_size, grid_size, figsize=(4, 4))
@@ -18,7 +18,7 @@ def save_puzzle_state(env, state, filename):
             ax[i, j].axis("off")
     plt.savefig(filename, bbox_inches='tight', pad_inches=0.1)
     plt.close()
-    print(f"Saved puzzle state to {filename}")
+    print(f"Saved puzzle state to {filename}")"""
 
 def main():
     # Load tile images
@@ -26,10 +26,10 @@ def main():
     tile_paths = [os.path.join(tile_folder, f"tile_{i}.png") for i in range(4)]
 
     # Ensure tiles exist
-    for path in tile_paths:
-        if not os.path.exists(path):
-            print(f"ERROR: Tile {path} not found!")
-            return
+    #for path in tile_paths:
+    #    if not os.path.exists(path):
+    #       print(f"ERROR: Tile {path} not found!")
+    #        return
 
     # Initialize the environment with image tiles
     puzzle_size = 2
@@ -81,7 +81,8 @@ def main():
     done = False
 
     # Save the start state image
-    save_puzzle_state(env, state, "start_state.png")
+    #save_puzzle_state(env, state, "start_state.png")
+    env.render(save_path="start_state.png")
 
     while not done:
         env.render()
@@ -93,9 +94,9 @@ def main():
     print("\nPuzzle solved!")
 
     # Save the solved state image
-    save_puzzle_state(env, state, "solved_state.png")
-
-    env.render()
+    #save_puzzle_state(env, state, "solved_state.png")
+    #env.render()
+    env.render(save_path="solved_state.png")
 
 if __name__ == "__main__":
     main()
