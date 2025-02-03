@@ -63,7 +63,6 @@ class SlidingPuzzleEnv(gym.Env):
         return np.array(self.state), reward, done, {}
 
     def render(self, mode='human', save_path=None):
-        """Displays the puzzle using image tiles instead of numbers, with an option to save."""
         fig, ax = plt.subplots(self.grid_size, self.grid_size, figsize=(4, 4))
         for i in range(self.grid_size):
             for j in range(self.grid_size):

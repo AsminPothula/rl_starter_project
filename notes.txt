@@ -85,3 +85,30 @@ coda, pytorch - deep elarning, ml, gpu (frameowrk to use gpu )
 4. graphs with statistics fter every epoch 
 5. join lab - reply email and join slack
 - put togteherr all the sources youre finding 
+
+
+3*3 puzzle - try 
+
+- if too slow 
+
+keep the num rep image tiles conceot - perfect 
+
+
+- pytorch with metal instead of calculate_reward
+
+inetyad of numpy use tensor 
+learn pytorch and cuda 
+3*3 puxxle - see how rpahs lool
+2*2 visualstion - transition 
+
+fourier transfor - 3 bluw 1 brown - hwo it works - math behind it - one function epr action - fourier transform of cycloid 
+
+2 more artistic styles 
+what action will the NN give - lets say a vectore - its first componene is startign pint etc - basically what acton the NN has to giev out and what format 
+
+
+for the week - 
+1. pytorch (cude / metal)
+2. 3*3 try 
+3. 2*2 visualisation - when free 
+4. defien 2 artistic styles 

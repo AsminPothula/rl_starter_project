@@ -7,23 +7,23 @@ def plot_training_results(epochs_list, steps_list, rewards_list, output_dir="tra
     
     # Graph 1: Steps per Epoch
     plt.figure(figsize=(10, 4))
-    plt.plot(epochs_list, steps_list, marker='o', linestyle='-', color='b')
+    plt.plot(epochs_list, steps_list, linestyle='-', color='b')
     plt.xlabel("Epochs")
     plt.ylabel("Steps Taken")
     plt.title("Steps per Epoch")
     plt.grid()
-    plt.ylim(bottom=-50, top=50)  # change these values to view the extremes (-200,200)
+   # plt.ylim(bottom=-100, top=100)  # change these values to view the extremes (-200,200)
     plt.savefig(os.path.join(output_dir, "steps_per_epoch.png"))
     plt.close()
     
     # Graph 2: Total Reward per Epoch
     plt.figure(figsize=(10, 4))
-    plt.plot(epochs_list, rewards_list, marker='o', linestyle='-', color='g')
+    plt.plot(epochs_list, rewards_list, linestyle='-', color='g')
     plt.xlabel("Epochs")
     plt.ylabel("Total Reward")
     plt.title("Total Reward per Epoch")
     plt.grid()
-    plt.ylim(bottom=-250, top=250)  # change these values to view the extremes (-500,500)
+    #plt.ylim(bottom=-250, top=250)  # change these values to view the extremes (-500,500)
     plt.savefig(os.path.join(output_dir, "reward_per_epoch.png"))
     plt.close()
     
