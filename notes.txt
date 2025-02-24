@@ -108,7 +108,7 @@ what action will the NN give - lets say a vectore - its first componene is start
 
 
 for the week - 
-1. pytorch (cude / metal)
+1. pytorch (cuda / metal) - working 
 2. 3*3 try 
 3. 2*2 visualisation - when free 
-4. defien 2 artistic styles 
+4. define 2 artistic styles - done 

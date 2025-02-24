@@ -27,6 +27,7 @@ def main():
     # Load tile images
     tile_folder = "puzzle_tiles"
     tile_paths = [os.path.join(tile_folder, f"tile_{i}.png") for i in range(4)]
+    #print("Tiles loaded!")
 
     # Initialize the environment with image tiles
     puzzle_size = 2
@@ -43,7 +44,7 @@ def main():
     learning_rate = 0.8
     exploration_prob = 0.2
     discount_factor = 0.95
-    epochs = 1000  
+    epochs = 100
 
     # Initialize lists for training statistics (for graphing)
     epochs_list = []
@@ -67,8 +68,8 @@ def main():
 
                 # Write epoch header to log file
                 f.write(f"\nEpoch {epoch + 1}/{epochs} Running...\n")
-                f.write(f"{'Step':<6}{'Action':<10}{'Reward':<10}\n")
-                f.write("-" * 30 + "\n")
+                """f.write(f"{'Step':<6}{'Action':<10}{'Reward':<10}\n")
+                f.write("-" * 30 + "\n")"""
 
                 while not done:
                     state_index = state_to_index[tuple(state)]
@@ -97,7 +98,7 @@ def main():
                     actions_taken.append(action_name)
 
                     # Log step details to file
-                    f.write(f"{steps:<6}{action_name:<10}{reward:<10.2f}\n")
+                    #f.write(f"{steps:<6}{action_name:<10}{reward:<10.2f}\n")
 
                     # Move to next state
                     state = next_state
@@ -115,9 +116,9 @@ def main():
                     ["Exploration Count", exploration_count],
                     ["Exploitation Count", exploitation_count]
                 ]
-                f.write("\nEpoch Summary:\n")
+                """f.write("\nEpoch Summary:\n")
                 f.write(tabulate(table_data, headers=["Metric", "Value"], tablefmt="grid") + "\n")
-                f.write("-" * 80 + "\n")
+                f.write("-" * 80 + "\n")"""
 
                 pbar.update(1)
 
